@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-16
+
 ### Added
 
 - PetKit account (e-mail or phone number and password, server of the account's
@@ -38,4 +40,5 @@ the notes of the version's GitHub Release.
 - "Test the connection" button with a summary of the account.
 - Feature names, litter box states and alert messages in French or English.
 
-[Unreleased]: https://github.com/LM1LC3N7/gladys-petkit/commits/main
+[Unreleased]: https://github.com/LM1LC3N7/gladys-petkit/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-petkit/releases/tag/v0.1.1

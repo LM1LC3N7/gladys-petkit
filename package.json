@@ -1,6 +1,6 @@
 {
   "name": "gladys-petkit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Gladys Assistant external integration for PetKit feeders, litter boxes and water fountains. Unofficial, not affiliated with PetKit.",
   "type": "module",
