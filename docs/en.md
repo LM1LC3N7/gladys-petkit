@@ -1,61 +1,175 @@
-# Demo Devices Template
+# PetKit
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+This integration brings the connected **PetKit** devices into Gladys:
+**feeders** (Fresh Element, YumShare), automatic **litter boxes** (Pura X,
+Pura Max, Purobot) and **Eversweet water fountains**, through the PetKit
+cloud (the one of the PetKit app). Unofficial, not affiliated with PetKit.
+
+> **Development version (0.1).** Built from the community clients of the
+> PetKit API (py-petkit-api, used by the Home Assistant integration) and tested
+> with simulated answers, not with a real account yet. Feedback is welcome on
+> the GitHub repository.
+
+## Before you start: a second PetKit account
+
+PetKit allows **one session per account**: when the PetKit app signs in with
+the account Gladys uses, Gladys's session is closed, and the other way round.
+So, like the Home Assistant integration recommends, give Gladys **its own
+PetKit account, added to your family**:
+
+1. In the PetKit app, create a second account (sign up with another e-mail
+   address or phone number), in the **same country** as your main account.
+   You can do it on another phone, or sign out of your main account first.
+2. Sign in to the PetKit app with your **main** account.
+3. At the top of the home screen, tap **Family management**, then **Create
+   family** and follow the instructions (skip this if you already have a
+   family).
+4. In the family, tap **Add family member** and add your second account.
+5. In Gladys, enter the e-mail (or phone number) and password of the **second**
+   account.
+
+The devices and pets of the family then show up in Gladys, and the PetKit app
+stays signed in on your phone. If you use the same account in both places
+anyway, the integration notices that its session keeps being closed: it waits
+15 minutes, tries once more, then stops and asks for a second account.
 
 ## What you get
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+One Gladys device per PetKit device, and one per pet when the account has a
+litter box:
 
-## Configuration
+| Device                       | In Gladys                                                                                                                                                                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feeder                       | "Feed one portion" button (one per hopper on two-hopper feeders), food level (low/normal), food left % when reported, dispensed today, last meal, desiccant days left, battery, online, error                                                                                   |
+| Litter box                   | "Clean now" button, "Deodorize now" button (Pura X, Pura Max with its deodorizer, Purobot Max Pro, Crystal Duo), state (idle, cleaning, paused…), litter level %, litter low, waste bin (normal, high when full), deodorizer days left, uses today, last used by, online, error |
+| Eversweet fountain           | water level (low/normal), filter %, filter days left (Ultra), pump running, drinks today and waste water tank (Ultra), battery (cordless models)                                                                                                                                |
+| Each pet (with a litter box) | weight measured by the litter box (kg), duration of its last visit, visits today                                                                                                                                                                                                |
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+- Levels use the Gladys level state: **low**, **normal**, **high** (a full
+  waste bin reads "high").
+- Food amounts are generic sensors with their unit in the name: grams on the
+  single-hopper feeders, **portions** on the two-hopper ones (Gemini,
+  YumShare Dual-hopper). Gladys has no mass unit.
+- The last meal, the last visit of a litter box and the weight of a pet are
+  dated with the time they happened, not with the time of the reading.
+- The badge of each device shows `cloud`; `unreachable` with an orange dot
+  when PetKit reports the device offline, plain `unreachable` when PetKit
+  does not answer.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+### Supported models
 
-## Actions
+- **Feeders**: Fresh Element, Fresh Element Mini Pro, Fresh Element Infinity,
+  Fresh Element Solo, Fresh Element Gemini, YumShare Solo (and Solo 2),
+  YumShare Dual-hopper (and Dual-hopper 2).
+- **Litter boxes**: Pura X, Pura Max (and Max 2), Purobot Max Pro (and Pro 2),
+  Purobot Ultra, Purobot Crystal Duo.
+- **Fountains**: Eversweet Ultra AI (Wi-Fi), and the Bluetooth fountains
+  (Eversweet Solo 2, Eversweet 3 Pro and 3 Pro UVC, Eversweet 5 Mini,
+  Eversweet Max, Max 2 and Max 2 UVC).
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+**Bluetooth fountains** do not reach the cloud by themselves: PetKit only knows
+what another PetKit device acting as a **Bluetooth relay** (a feeder or a
+litter box nearby) or the app last synced. Gladys shows that last state. The
+Eversweet Ultra AI has Wi-Fi and is read directly.
+
+Not supported yet: the air purifiers (Air Magicube, Air Smart Spray on their
+own), photos, videos and the live stream.
+
+## Installation
+
+1. Install the integration from the Gladys store.
+2. In the **Configuration** tab, enter the e-mail (or phone number) and the
+   password of the PetKit account (preferably the second account, see above).
+3. Choose the **PetKit server** of the country of the account: Europe (France,
+   Belgium, Switzerland, United Kingdom…), International (Americas,
+   Australia…), Asia, Russia or China. Save.
+4. The status says "Connected to PetKit: 5 devices, 2 pets" and the end date
+   of the session.
+5. Open the **Discovery** tab and add the devices and pets you want to follow.
+   Their values arrive as soon as they are added.
+
+The **Test the connection** button signs in again if needed, reads the account
+and lists its devices and pets.
+
+## Buttons and feeding from a scene
+
+- **Feed one portion** dispenses the smallest amount the feeder accepts:
+  10 g on the Fresh Element Solo and YumShare Solo, 5 g on the Mini and the
+  Infinity, 20 g on the Fresh Element, 1 portion per hopper on the Gemini and
+  the YumShare Dual-hopper.
+- The **Feed with a PetKit feeder** scene action dispenses any amount the
+  feeder accepts: 10 to 50 g by 10 (Solo, YumShare Solo), 5 to 50 g by 5
+  (Mini), 5 to 200 g (Infinity), 20 to 400 g by 20 (Fresh Element), 1 to 10
+  portions from hopper 1 or 2 (Gemini, YumShare Dual-hopper). Another amount
+  fails with the list of the accepted ones.
+- **Clean now** starts a cleaning cycle of the litter box; **Deodorize now**
+  starts its deodorizer. PetKit refuses them while the box works or a cat is
+  inside: the error message shows in Gladys.
+
+A meal asked from Gladys does not fire the "Meal dispensed" trigger, so a
+scene cannot loop on it.
 
 ## Scenes
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+Three scene triggers:
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **Litter box used**: a litter box recorded a visit. Variables `pet_name`
+  ("Unknown pet" when the box did not recognize the cat), `weight` (kg),
+  `duration` (seconds), `litter_box_name` and `at` (UTC). The filter can
+  target a litter box and a pet.
+- **Meal dispensed**: a feeder dispensed a meal of its plan, from the app or
+  from its own button. Variables `feeder_name`, `amount`, `unit` (`g` or
+  `portions`), `source` (`plan`, `app`, `feeder`) and `at`.
+- **PetKit alert**: a device starts reporting a problem: food running low,
+  waste bin full, litter running low, deodorizer liquid low, water running
+  low, filter to change, or a device error. The filter can target a device
+  and some alerts; variables `device_name` and `message`. An alert fires once
+  when it starts, again only after it cleared.
 
-## Dashboard
+The first reading after a start fires nothing, and records older than 15
+minutes found after an outage are only recorded. The other values work with
+the usual "Device state changed" trigger.
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+## How often it reads
+
+Every 2 minutes by default (60 to 900 seconds): one request per device, plus
+one for the records of the day of each feeder and litter box. The device list
+is read again every 30 minutes and on a Discovery scan. On errors the
+integration waits 1, 2, 5, 10 then 15 minutes; when PetKit says it is busy, 5
+minutes. It signs in at most once every 15 minutes and keeps its session
+across restarts.
+
+## Options
+
+| Option                        | Default       | Purpose                                                  |
+| ----------------------------- | ------------- | -------------------------------------------------------- |
+| E-mail or phone, password     | —             | a PetKit account, preferably a second one in your family |
+| PetKit server                 | Europe        | the server of the country of the account                 |
+| Time zone of the devices      | Gladys's zone | the days and feeding times of PetKit (IANA name)         |
+| Refresh interval (s)          | 120           | how often the devices are read                           |
+| Language of the feature names | French        | names of the features, litter box states, alert messages |
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"PetKit refused the e-mail or password"**: check them in the PetKit app.
+  The integration does not retry by itself: it waits for a change or a click
+  on **Test the connection**.
+- **"PetKit knows no such account on its … server"**: choose the server of the
+  country the account was created in.
+- **"PetKit closed the session right after the sign-in"**: the same account is
+  signed in to the PetKit app. Use a second account added to your family.
+- **A Bluetooth fountain never changes**: no relay device synced it. Check in
+  the PetKit app that a feeder or a litter box relays it.
+- **A device is `unreachable` with an orange dot**: PetKit reports it offline
+  (Wi-Fi, power). Check it in the app.
+- **A model is missing**: purifiers and other devices are not supported yet;
+  the test button lists them. Open an issue on the GitHub repository.
+
+## Privacy
+
+The e-mail and password are stored by Gladys as a secret (never sent back to
+the browser). The integration sends the e-mail and an MD5 hash of the
+password to the PetKit server of the chosen region to open a session, like the
+app does; it keeps the session in its `/data` folder. PetKit, Fresh Element,
+YumShare, Pura, Purobot and Eversweet are trademarks of their owner; this
+integration is not affiliated with PetKit.

@@ -1,45 +1,53 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
-//
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// The configuration of the manifest `config_schema`, normalized.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
-export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+import { createHash } from 'node:crypto';
+import { POLL_INTERVAL, SERVERS } from './constants.js';
+import { localZone, validZone } from './clock.js';
+
+/** Defaults, mirrored by the manifest (checked by test/manifest.test.js). */
+export const DEFAULTS = {
+  region: 'europe',
+  timezone: '',
+  poll_interval: POLL_INTERVAL.default,
+  language: 'fr',
 };
 
-/**
- * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
- */
-export function normalizeConfig(raw = {}) {
+export const LANGUAGES = ['fr', 'en'];
+export const REGIONS = Object.keys(SERVERS);
+
+/** The account a session belongs to, without keeping the user name itself. */
+export const accountKey = (username, region) =>
+  createHash('sha256')
+    .update(`${region}:${username.trim().toLowerCase()}`)
+    .digest('hex')
+    .slice(0, 16);
+
+export function normalizeConfig(raw = {}, { zone = localZone() } = {}) {
+  const username = String(raw?.username ?? '').trim();
+  const password = String(raw?.password ?? '');
+  const region = String(raw?.region ?? DEFAULTS.region)
+    .trim()
+    .toLowerCase();
+  const timezone = String(raw?.timezone ?? '').trim();
+  const interval = Number(raw?.poll_interval);
+  const language = String(raw?.language ?? DEFAULTS.language)
+    .trim()
+    .toLowerCase();
+  const server = REGIONS.includes(region) ? region : DEFAULTS.region;
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    username,
+    password,
+    region: server,
+    account: username === '' ? '' : accountKey(username, server),
+    // The time zone of the devices: PetKit dates the days and the feeding
+    // plans with it. Gladys's own (the TZ of the container) by default.
+    timezone: validZone(timezone) ? timezone : zone,
+    timezoneInvalid: timezone !== '' && !validZone(timezone),
+    pollInterval: Number.isFinite(interval)
+      ? Math.round(Math.max(POLL_INTERVAL.min, Math.min(POLL_INTERVAL.max, interval)))
+      : DEFAULTS.poll_interval,
+    language: LANGUAGES.includes(language) ? language : DEFAULTS.language,
   };
 }

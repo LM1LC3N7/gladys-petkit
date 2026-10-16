@@ -1,67 +1,191 @@
-# Template de démonstration
+# PetKit
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Cette intégration amène dans Gladys les appareils connectés **PetKit** :
+**distributeurs** de croquettes (Fresh Element, YumShare), **litières**
+automatiques (Pura X, Pura Max, Purobot) et **fontaines Eversweet**, par le
+cloud PetKit (celui de l'application PetKit). Non officielle, sans lien avec
+PetKit.
+
+> **Version de développement (0.1).** Réalisée d'après les clients
+> communautaires de l'API PetKit (py-petkit-api, utilisé par l'intégration
+> Home Assistant) et testée avec des réponses simulées, pas encore avec un
+> vrai compte. Vos retours sont les bienvenus sur le dépôt GitHub.
+
+## Avant de commencer : un second compte PetKit
+
+PetKit n'autorise **qu'une session par compte** : quand l'application PetKit
+se connecte avec le compte utilisé par Gladys, la session de Gladys est
+fermée, et inversement. Comme le recommande l'intégration Home Assistant,
+donnez donc à Gladys **son propre compte PetKit, ajouté à votre famille** :
+
+1. Dans l'application PetKit, créez un second compte (inscription avec une
+   autre adresse e-mail ou un autre numéro de téléphone), dans le **même
+   pays** que votre compte principal. Vous pouvez le faire sur un autre
+   téléphone, ou vous déconnecter d'abord de votre compte principal.
+2. Connectez-vous à l'application PetKit avec votre compte **principal**.
+3. En haut de l'écran d'accueil, touchez **Gestion de la famille** (Family
+   management), puis **Créer une famille** et suivez les instructions (inutile
+   si vous avez déjà une famille).
+4. Dans la famille, touchez **Ajouter un membre** et ajoutez votre second
+   compte.
+5. Dans Gladys, saisissez l'e-mail (ou le téléphone) et le mot de passe du
+   **second** compte.
+
+Les appareils et les animaux de la famille apparaissent alors dans Gladys, et
+l'application PetKit reste connectée sur votre téléphone. Si vous utilisez
+quand même le même compte aux deux endroits, l'intégration voit que sa session
+est sans cesse fermée : elle attend 15 minutes, réessaie une fois, puis
+s'arrête et demande un second compte.
 
 ## Ce que vous obtenez
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Un appareil Gladys par appareil PetKit, et un par animal quand le compte a une
+litière :
 
-## Configuration
+| Appareil                         | Dans Gladys                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Distributeur                     | bouton « Distribuer une portion » (un par réservoir sur les modèles à deux réservoirs), niveau de croquettes (faible/normal), croquettes restantes % quand l'appareil le donne, distribué aujourd'hui, dernier repas, jours restants du déshydratant, batterie, en ligne, erreur                                                                                           |
+| Litière                          | bouton « Nettoyer maintenant », bouton « Désodoriser maintenant » (Pura X, Pura Max avec son désodorisant, Purobot Max Pro, Crystal Duo), état (en attente, nettoyage, en pause…), niveau de litière %, litière insuffisante, bac à déchets (normal, élevé quand il est plein), jours restants du désodorisant, passages aujourd'hui, dernier passage de, en ligne, erreur |
+| Fontaine Eversweet               | niveau d'eau (faible/normal), filtre %, jours restants du filtre (Ultra), pompe en marche, abreuvements aujourd'hui et réservoir d'eau usée (Ultra), batterie (modèles sans fil)                                                                                                                                                                                           |
+| Chaque animal (avec une litière) | poids mesuré par la litière (kg), durée de son dernier passage, passages aujourd'hui                                                                                                                                                                                                                                                                                       |
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+- Les niveaux utilisent l'état de niveau de Gladys : **faible**, **normal**,
+  **élevé** (un bac à déchets plein est « élevé »).
+- Les quantités de croquettes sont des capteurs génériques avec leur unité
+  dans le nom : en grammes sur les distributeurs à un réservoir, en
+  **portions** sur ceux à deux réservoirs (Gemini, YumShare Dual-hopper).
+  Gladys n'a pas d'unité de masse.
+- Le dernier repas, le dernier passage à une litière et le poids d'un animal
+  sont datés du moment où ils ont eu lieu, pas de l'heure de la lecture.
+- Le badge de chaque appareil indique `cloud` ; `injoignable` avec un point
+  orange quand PetKit signale l'appareil hors ligne, `injoignable` tout court
+  quand PetKit ne répond pas.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+### Modèles pris en charge
 
-## Actions
+- **Distributeurs** : Fresh Element, Fresh Element Mini Pro, Fresh Element
+  Infinity, Fresh Element Solo, Fresh Element Gemini, YumShare Solo (et
+  Solo 2), YumShare Dual-hopper (et Dual-hopper 2).
+- **Litières** : Pura X, Pura Max (et Max 2), Purobot Max Pro (et Pro 2),
+  Purobot Ultra, Purobot Crystal Duo.
+- **Fontaines** : Eversweet Ultra AI (Wi-Fi), et les fontaines Bluetooth
+  (Eversweet Solo 2, Eversweet 3 Pro et 3 Pro UVC, Eversweet 5 Mini,
+  Eversweet Max, Max 2 et Max 2 UVC).
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Les **fontaines Bluetooth** n'atteignent pas le cloud seules : PetKit ne
+connaît que ce qu'un autre appareil PetKit servant de **relais Bluetooth** (un
+distributeur ou une litière à proximité) ou l'application a synchronisé en
+dernier. Gladys affiche ce dernier état. L'Eversweet Ultra AI a le Wi-Fi et
+est lue directement.
+
+Pas encore pris en charge : les purificateurs (Air Magicube, Air Smart Spray
+seuls), les photos, les vidéos et le direct.
+
+## Installation
+
+1. Installez l'intégration depuis le store de Gladys.
+2. Dans l'onglet **Configuration**, saisissez l'e-mail (ou le téléphone) et le
+   mot de passe du compte PetKit (de préférence le second compte, voir
+   ci-dessus).
+3. Choisissez le **serveur PetKit** du pays du compte : Europe (France,
+   Belgique, Suisse, Royaume-Uni…), International (Amériques, Australie…),
+   Asie, Russie ou Chine. Enregistrez.
+4. L'état indique « Connecté à PetKit : 5 appareils, 2 animaux » et la date de
+   fin de la session.
+5. Ouvrez l'onglet **Découverte** et ajoutez les appareils et les animaux que
+   vous voulez suivre. Leurs valeurs arrivent dès l'ajout.
+
+Le bouton **Tester la connexion** se reconnecte si besoin, lit le compte et
+liste ses appareils et ses animaux.
+
+## Boutons et distribution depuis une scène
+
+- **Distribuer une portion** distribue la plus petite quantité acceptée par le
+  distributeur : 10 g sur le Fresh Element Solo et le YumShare Solo, 5 g sur
+  le Mini et l'Infinity, 20 g sur le Fresh Element, 1 portion par réservoir
+  sur le Gemini et le YumShare Dual-hopper.
+- L'action de scène **Distribuer avec un distributeur PetKit** distribue toute
+  quantité acceptée par le distributeur : 10 à 50 g par 10 (Solo, YumShare
+  Solo), 5 à 50 g par 5 (Mini), 5 à 200 g (Infinity), 20 à 400 g par 20
+  (Fresh Element), 1 à 10 portions du réservoir 1 ou 2 (Gemini, YumShare
+  Dual-hopper). Une autre quantité échoue avec la liste des quantités
+  acceptées.
+- **Nettoyer maintenant** lance un cycle de nettoyage de la litière ;
+  **Désodoriser maintenant** lance son désodorisant. PetKit les refuse quand
+  la litière travaille ou qu'un chat est dedans : le message d'erreur
+  s'affiche dans Gladys.
+
+Un repas demandé depuis Gladys ne déclenche pas « Repas distribué » : une
+scène ne peut pas boucler dessus.
 
 ## Scènes
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Trois déclencheurs de scène :
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+- **Litière utilisée** : une litière a enregistré un passage. Variables
+  `pet_name` (« Animal inconnu » quand la litière n'a pas reconnu le chat),
+  `weight` (kg), `duration` (secondes), `litter_box_name` et `at` (UTC). Le
+  filtre peut viser une litière et un animal.
+- **Repas distribué** : un distributeur a distribué un repas de son programme,
+  depuis l'application ou depuis son propre bouton. Variables `feeder_name`,
+  `amount`, `unit` (`g` ou `portions`), `source` (`plan`, `app`, `feeder`) et
+  `at`.
+- **Alerte PetKit** : un appareil commence à signaler un problème : croquettes
+  bientôt épuisées, bac à déchets plein, litière insuffisante, liquide
+  désodorisant bas, manque d'eau, filtre à changer, ou une erreur de
+  l'appareil. Le filtre peut viser un appareil et certaines alertes ;
+  variables `device_name` et `message`. Une alerte se déclenche une fois quand
+  elle commence, de nouveau seulement après avoir disparu.
 
-## Tableau de bord
+La première lecture après un démarrage ne déclenche rien, et les
+enregistrements de plus de 15 minutes trouvés après une coupure sont
+seulement enregistrés. Les autres valeurs fonctionnent avec le déclencheur
+habituel « Changement d'état d'un appareil ».
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+## Fréquence de lecture
+
+Toutes les 2 minutes par défaut (60 à 900 secondes) : une requête par
+appareil, plus une pour les enregistrements du jour de chaque distributeur et
+de chaque litière. La liste des appareils est relue toutes les 30 minutes et à
+chaque recherche dans Découverte. En cas d'erreur, l'intégration attend 1, 2,
+5, 10 puis 15 minutes ; quand PetKit se dit surchargé, 5 minutes. Elle se
+connecte au plus une fois toutes les 15 minutes et garde sa session d'un
+redémarrage à l'autre.
+
+## Options
+
+| Option                              | Défaut          | Rôle                                                              |
+| ----------------------------------- | --------------- | ----------------------------------------------------------------- |
+| E-mail ou téléphone, mot de passe   | —               | un compte PetKit, de préférence un second compte de votre famille |
+| Serveur PetKit                      | Europe          | le serveur du pays du compte                                      |
+| Fuseau horaire des appareils        | celui de Gladys | les jours et les heures de repas de PetKit (nom IANA)             |
+| Intervalle de rafraîchissement (s)  | 120             | fréquence de lecture des appareils                                |
+| Langue des noms des fonctionnalités | Français        | noms des fonctionnalités, états des litières, messages d'alerte   |
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« PetKit a refusé l'e-mail ou le mot de passe »** : vérifiez-les dans
+  l'application PetKit. L'intégration ne réessaie pas seule : elle attend une
+  modification ou un clic sur **Tester la connexion**.
+- **« PetKit ne connaît pas ce compte sur son serveur … »** : choisissez le
+  serveur du pays dans lequel le compte a été créé.
+- **« PetKit a fermé la session juste après la connexion »** : le même compte
+  est connecté dans l'application PetKit. Utilisez un second compte ajouté à
+  votre famille.
+- **Une fontaine Bluetooth ne change jamais** : aucun appareil relais ne l'a
+  synchronisée. Vérifiez dans l'application PetKit qu'un distributeur ou une
+  litière la relaie.
+- **Un appareil est `injoignable` avec un point orange** : PetKit le signale
+  hors ligne (Wi-Fi, alimentation). Vérifiez-le dans l'application.
+- **Un modèle manque** : les purificateurs et d'autres appareils ne sont pas
+  encore pris en charge ; le bouton de test les liste. Ouvrez un ticket sur le
+  dépôt GitHub.
+
+## Confidentialité
+
+L'e-mail et le mot de passe sont stockés par Gladys comme secret (jamais
+renvoyés au navigateur). L'intégration envoie l'e-mail et une empreinte MD5 du
+mot de passe au serveur PetKit de la région choisie pour ouvrir une session,
+comme le fait l'application ; elle garde la session dans son dossier `/data`.
+PetKit, Fresh Element, YumShare, Pura, Purobot et Eversweet sont des marques
+de leur propriétaire ; cette intégration est sans lien avec PetKit.
